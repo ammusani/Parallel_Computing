@@ -1,6 +1,5 @@
 #include <bits/stdc++.h>
 #include <mpi.h>
-#include <time.h>
 
 using namespace std;
 
@@ -116,7 +115,7 @@ int main (int argc, char **argv) {
 		for (l = 2; l < n; l++) {
 
 
-			clock_t start = clock();
+			clock_t start = MPI_Wtime();
 			
 			
 			for (int i = 0; i < n; i++) {
@@ -144,11 +143,9 @@ int main (int argc, char **argv) {
 				flag = A[s][t];
 			}
 			MPI_Bcast(&flag, 1, MPI_INT, s / m, MPI_COMM_WORLD);
+			double stop = MPI_Wtime();
 
-			if (r == 0) {
-				clock_t stop = clock();
-				cout << "Execution Time(in mS) for " << l << " lenght step = " << (double)(stop - start) * 1000/ CLOCKS_PER_SEC << endl;
-			}
+			if (r == 0) cout << "Execution Time(in mS) for " << l << " lenght step = " << (stop - start) << endl;
 
 			if (flag) break;
 		}
