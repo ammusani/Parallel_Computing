@@ -1,3 +1,15 @@
+/*
+ * Problem: A -> Adjacency Matrix of an Undirected, Unit Weight Graph
+ * To find the Shortest distance between s, t.
+ *
+ * Shortest Distance x, where A^x[s][t] != 0
+ *
+ * The problem is solved by diving the whole square-matrix of Dim n into p square-submatrices of dim n / sqrt(p)
+ * Where p is number of threads
+ * The idea is to not have the whole data but acquire it from another process when required
+ * */
+
+
 #include <bits/stdc++.h>
 #include <mpi.h>
 using namespace std;
@@ -98,6 +110,11 @@ int main (int argc, char **argv) {
 	int C[k][k];
 	int Bo[k][k];
 
+	/*
+	 * Initializing the submatrices from the file
+	 * */
+
+
 	ifstream graphFile;
 	graphFile.open(fileName);
 	
@@ -111,72 +128,153 @@ int main (int argc, char **argv) {
 
 	graphFile.close();
 
+	
+	/*
+	 * Check if edge is already present between s & t
+	 * */
+
 	if (rank == (s / k) * sqrtP + (t / k) && A[s % k][t % k]) l = 1;
+	MPI_Bcast(&l, 1, MPI_INT, (s / k) * sqrtP + (t / k), MPI_COMM_WORLD);
+
+	/*
+	 * If the edge is not present then find the path length
+	 * */
 
 	if (l != 1) {
 
 		int flag = 0;
+
 		memcpy(&B, &A, sizeof(B));
 		memcpy(&Bo, &B, sizeof(B));
 
+		/*
+		 * The Matrix is divided into a matrix of submatrices
+		 * Calculating the indices of each submatrix
+		 * */
+
+		int row = floor(rank / sqrtP);
+		int col = (int)rank % sqrtP;
+
+
+		/*
+		 * Doing at max n - 2 multiplication to check if an edge exists
+		 * */
+
 		for (l = 2; l < n; l++) {
+
+			/*
+			 * Starting the multiplication
+			 * */
+
 		 	double start = MPI_Wtime();
-			for (int i = 1; i < sqrtP; i++) {
 
-				if (rank / sqrtP == i) {
-					int left = (rank - i + sqrtP) % sqrtP + i * sqrtP;
-					int right = (rank + i) % sqrtP + i * sqrtP;
-					MPI_Send(&A, k * k, MPI_INT, left, rank, MPI_COMM_WORLD);
-					MPI_Recv(&A, k * k, MPI_INT, right, right, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-				}
+			/* 
+			 * Rotating ith row of submatrices by i times
+			 * */
 
-				if (rank % sqrtP == i) { 
-					int up = (rank - i * sqrtP + p) % p;
-					int down = (rank + i * sqrtP) % p;
-					MPI_Send(&B, k * k, MPI_INT, up, rank , MPI_COMM_WORLD);
-					MPI_Recv(&B, k * k, MPI_INT, down, down, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				}
-
+			if (row > 0) {
+				int left = (rank - row) % sqrtP + row * sqrtP;
+				int right = (rank + row) % sqrtP + row * sqrtP;
+				MPI_Send(&A, k * k, MPI_INT, left, 0, MPI_COMM_WORLD);
+				MPI_Recv(&A, k * k, MPI_INT, right, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			}
-			memset(C, 0, sizeof(C));
 
-			for (int q = 0; q < sqrtP; q++) {
-				for (int i = 0; i < sqrtP; i++) {
-					for (int i1 = 0; i1 < sqrtP; i1++)
-						for (int i2 = 0; i2 < sqrtP; i2++)
-							for (int i3 = 0; i3 < sqrtP; i3++) C[i1][i2] += A[i1][i3] * B[i3][i2];
+			/*
+			 * Rotating jth column of submatices by j times
+			 * */
 
-					int left = (rank - 1 + sqrtP) % sqrtP + i * sqrtP;
-					int right = (rank + 1 + sqrtP) % sqrtP + i * sqrtP;
+			if (col > 0) { 
+				int up = (rank - col * sqrtP + p) % p;
+				int down = (rank + col * sqrtP) % p;
+				MPI_Send(&B, k * k, MPI_INT, up, 0, MPI_COMM_WORLD);
+				MPI_Recv(&B, k * k, MPI_INT, down, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
 
-					int up = (rank - sqrtP + p) % p;
-					int down = (rank + sqrtP) % p;
 
-					MPI_Send(&A, k * k, MPI_INT, left, rank, MPI_COMM_WORLD);
-					MPI_Recv(&A, k * k, MPI_INT, right, right, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			memset(C, 0, sizeof(C));  // Making sure C is initialized to zero
 
-					MPI_Send(&B, k * k, MPI_INT, up, rank, MPI_COMM_WORLD);
-					MPI_Recv(&B, k * k, MPI_INT, down, down, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+			/*
+			 * Since there are sqrt(p) rows and columns, that many multiplications are required
+			 * */
+			for (int i = 0; i < sqrtP; i++) {
+				
+				/* 
+				 * Submatrix multiplication with the available data
+				 * */
+
+				for (int i1 = 0; i1 < k; i1++) {
+					for (int i2 = 0; i2 < k; i2++) {
+						for (int i3 = 0; i3 < k; i3++) {
+							C[i1][i2] += A[i1][i3] * B[i3][i2];
+						}
+					}
 				}
 
+
+				/*
+				 * Rotating each row by 1 to left
+				 * */
+
+				int left = (rank - 1 + sqrtP) % sqrtP + row * sqrtP;
+				int right = (rank + 1) % sqrtP + row * sqrtP;
+				MPI_Send(&A, k * k, MPI_INT, left, 0, MPI_COMM_WORLD);
+				MPI_Recv(&A, k * k, MPI_INT, right, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+
+				/*
+				 * Rotating each column by 1 to up
+				 * */
+
+				int up = (rank - sqrtP + p) % p;
+				int down = (rank + sqrtP) % p;
+				MPI_Send(&B, k * k, MPI_INT, up, 0, MPI_COMM_WORLD);
+				MPI_Recv(&B, k * k, MPI_INT, down, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	
 			}
 			
+			/*
+			 * Matrix Multiplication ends her
+			 * */
 			double stop = MPI_Wtime();
 
+			/*
+			 * Storing C in A for next iteration
+			 * And restoring B to the original value
+			 * Since the goal is to find A^k, where k < n & k is the shortest path length
+			 * */
 			memcpy(&A, &C, sizeof(A));
 		       	memcpy(&B, &Bo, sizeof(B));	
 			
+
+			/*
+			 * Checking for edge b/w s & t
+			 * */
+
 			if (rank == (s / k) * sqrtP + (t / k) && A[s % k][t % k]) flag = 1;
 			MPI_Bcast(&flag, 1, MPI_INT, (s / k) * sqrtP + (t / k), MPI_COMM_WORLD);
+
+			/*
+			 * Printing multiplication time for ith step
+			 * */
 			if (rank == 0) cout << "Execution Time(in ms) for " << l << " length step = " << stop - start << endl;
 
+			/*
+			 * Breaking if edge found
+			 * */
+			//MPI_Barrier(MPI_COMM_WORLD);
 			if(flag) break;
 
 		} 
 
 
 	}
+
+	/*
+	 * Printing Path Value
+	 * */
+	cout << endl;
 	if (rank == 0) {
 		if (l < n) cout << "Shortest Path Length = " << l << endl;
 		else cout << "No Shortest Path Exists" << endl;
