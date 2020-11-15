@@ -55,7 +55,13 @@ int main (int argc, char **argv) {
 		
 		for (int i = 0; i < n; i++) {
 			arr[i] = rand1(gen);
+			/*
+			 * Uncomment the following to see array elems
+			 cout << arr[i] << " ";
+			 * 
+			 * */
 		}
+		cout << endl;
 
 		/*
 		 * Sharing data with other processes

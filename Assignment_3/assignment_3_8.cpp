@@ -1,7 +1,5 @@
 #include <bits/stdc++.h>
 #include <mpi.h>
-#include <omp.h>
-
 using namespace std;
 
 long rand1 (minstd_rand0 &gen) {
@@ -58,13 +56,11 @@ int main (int argc, char **argv) {
 		for (int i = 0; i < n; i++) {
 			arr[i] = rand1(gen);
 			/*
-			 * Comment out the following code to see the value
-			 *  			
+			 * Uncomment the following to see array elems
 			 cout << arr[i] << " ";
-			 *
+			 * 
 			 * */
 		}
-
 		cout << endl;
 
 		/*
@@ -77,24 +73,23 @@ int main (int argc, char **argv) {
 			MPI_Send(&arr[(i - 1) * nByp], nByp, MPI_LONG, i, i, MPI_COMM_WORLD);
 		}
 
-		#pragma omp parallel for reduction(+: lSum)
-		for (int i = (p - 1) * nByp; i < n; i++) lSum = lSum + arr[i];
+		for (int i = (p - 1) * nByp; i < n; i++) lSum = lSum + (arr[i] * arr[i]);
 		
-		long gSum = lSum;		// Global Sum
+		long sum = lSum;
 
 		for (int i = 1; i < p; i++) {
 			MPI_Recv(&lSum, 1, MPI_LONG, i, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			gSum = gSum + lSum;
+			sum = sum + lSum;
 		}
-		cout << "Sum of all elements:" << endl << gSum << endl;
+		cout << "Scalar Product of the vector with itself:" << endl << sum << endl;
 
 	}
 	else {
 		long arr[nByp];
-		MPI_Recv(arr, nByp, MPI_LONG, 0, r, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		
-		#pragma omp parallel for reduction(+: lSum)
-		for (int i = 0; i < nByp; i++) lSum = lSum + arr[i];
+		MPI_Recv(arr, nByp, MPI_LONG, 0, r, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+		for (int i = 0; i < nByp; i++) lSum = lSum + (arr[i] * arr[i]);
 		
 		MPI_Send(&lSum, 1, MPI_LONG, 0, r, MPI_COMM_WORLD);
 	}
