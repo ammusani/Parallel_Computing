@@ -2,15 +2,6 @@
 #include <mpi.h>
 using namespace std;
 
-long rand1 (minstd_rand0 &gen) {
-	/*
-	 * Will return a number from 0 to 255
-	 * */
-	 
-	long long r1 = gen();
-	long long r2 = gen();
-	return (abs(r1 * r2) % 256);
-}
 
 int main (int argc, char **argv) {
 
@@ -45,9 +36,10 @@ int main (int argc, char **argv) {
 
 		/*
 		 * Diving work in a way that workers get n / (p - 1) elemsents and master gets last n % (p - 1) elements
+		 * By Master I mean it does collect the data and does all the pre & post sum processing
 		 * Zeroth process is master
 		 * Assuming Zero indexing
-		 * Since elements are arr[i] = i, I have not created an explicit array to reduce the loop for creation, for creation, I just to run a for loop
+		 * Since elements are arr[i] = i, I have not created an explicit array to reduce the loop for creation
 		 * */
 
 
