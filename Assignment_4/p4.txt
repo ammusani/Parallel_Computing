@@ -1,0 +1,41 @@
+Report on NVIDIA CUDA-X
+
+NVIDIA CUDA-X is built upon NVIDIA CUDA.
+It is a collection of tools and libraries that deliver way more performace than their CPU counter-parts. It is used in AI, HPC, ML and alot of other domains.
+They provide highly optimised implementation since libraries run on every kind of machine from IoT devices to Super-Computers.
+
+Components:
+
+1. Math Libraries:
+	i. 	cuBLAS: Linear Algebra Library - 152 Standard BLAS routines + GEMM for Volta and Turing Tensor Cores + CUDA Stream for concurrent operations.
+	ii.	cuFFT - Fast Fourier Transform Library - 1D, 2D, 3D transforms of Complex and Real data types + Multi GPU C2C, R2C, C2R transforms + In-place and out-of-place transforms
+	iii.	CUDA Math Library: C99 standard float & double precision + Bessel Functions
+	iv.	cuRAND: Random Number Generation - Bulk generation + 4 high-quality algos + Multiple Distribution options
+	v.	cuSOLOVER: Dense & Sparse direct solver - Numerical Methods + LU Decomposition + ODE solver
+	vi. 	cuSPARSE: BLAS for sparse matrices
+	vii.	cuTENSOR: Tensor Linear Algebra library
+
+2. Parallel Algorithms:
+	i. 	Thrust: Parallel algos & DS
+
+3. Image & Video:
+	i. 	nvJPEG: For jpeg decoding
+	ii.	NVIDIA Performance Primitives: For image, video and signal processing
+	iii.	NVIDIA Video Codec SDK: Hardware-accelerated encode & decode
+	iv.	NVIDIA Optical Flow SDK: Relative motion of pixel between images using Turing GPUs
+
+4. Communication Libraries:
+	i.	NVSHMEM: OpenSHMEM for GPUs
+	ii. 	NCCL: multi-GPU, multi-node communication
+
+
+5. Deep Learning:
+	i. 	cuDNN: Deep Neural Network
+	ii.	TensorRT: Deep learning influencer for deployment
+	iii.	Jarvis: As the name suggest, library for AI
+	iv.	DeepStream SDK: For streaming AI based video
+
+6. Partner Libraries:
+	i.	OpenCV:	Computer vision, image processing & ML.
+	ii.	ArrayFire: Matrix, signal & image processing
+	iii.	IMSL Fortran Numerical Library:	Library with function in math, signal and image processing for Fortran.
