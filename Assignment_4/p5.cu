@@ -11,7 +11,6 @@
 #define HANDLE_ERROR( err ) ( HandleError( err, __FILE__, __LINE__ ) )
 
 __managed__ int n;
-__managed__ int end;
 
 static void HandleError( cudaError_t err, const char *file, int line ) {
     if (err != cudaSuccess) {
@@ -26,12 +25,8 @@ __global__ void BFS_Kernel(int *Va, int *Ea, int *Fa, int *Xa, int *Ca) {
 		if(Fa[tid]) {
 			Fa[tid] = 0;
 			Xa[tid] = 1;
-			int curr_end;
-
-			if (tid == (n - 1)) curr_end = end;
-			else curr_end = Va[tid + 1];
 			
-			for (int i = Va[tid]; i < curr_end; i++) {
+			for (int i = Va[tid]; i < Va[tid + 1]; i++) {
 				int j = Ea[i];
 
 				if(!Xa[j]) {
@@ -58,14 +53,15 @@ int main() {
 	int *Ea;
 	int *c_Ea;
 
-	end = 0;	
-	Va = (int *)malloc(n * sizeof(int));
-	HANDLE_ERROR(cudaMalloc((void **)&c_Va, n * sizeof(int)));
+	int end = 0;	
+	Va = (int *)malloc((n + 1) * sizeof(int));
+	HANDLE_ERROR(cudaMalloc((void **)&c_Va, (n + 1) * sizeof(int)));
 	for (int i =0; i < n; i++) {
 		Va[i] = end;
 		end = end + (rand() % limit);
 	}
-	HANDLE_ERROR(cudaMemcpy(c_Va, Va, n * sizeof(int), cudaMemcpyHostToDevice));
+	Va[n] = end;
+	HANDLE_ERROR(cudaMemcpy(c_Va, Va, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
 
 	Ea = (int *)malloc(end * sizeof(int));
 	HANDLE_ERROR(cudaMalloc((void **)&c_Ea, end * sizeof(int)));
@@ -76,7 +72,7 @@ int main() {
 
 	/*
 	   Uncomment this to see the graph
-	 
+ 
 	for (int i = 0; i < n; i++) printf("%d ", Va[i]);
 	puts(" ");
 	for (int i = 0; i < end; i++) printf("%d ", Ea[i]);
